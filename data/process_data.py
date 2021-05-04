@@ -4,6 +4,12 @@ import sqlite3
 from sqlalchemy import create_engine
 
 def load_data(messages_filepath, categories_filepath):
+    '''
+    load_data method: load data from two sources to a dataframe
+    :messages_filepath messages_filepath: filepath of messages dataset
+    :categories_filepath categories_filepath: filepath of categories dataset
+    :return: dataframe merged
+    '''
     # load messages dataset
     messages = pd.read_csv(messages_filepath, sep=",")
 
@@ -15,6 +21,11 @@ def load_data(messages_filepath, categories_filepath):
     return df
 
 def clean_data(df):
+    '''
+    Clean data
+    :param df:
+    :return:
+    '''
     df = df.dropna(axis=0, subset=['message'])
 
     categories = df["categories"].str.split(";", expand=True)

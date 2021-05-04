@@ -1,19 +1,45 @@
 import json
+import re
+
+import numpy as np
 import plotly
 import pandas as pd
 
+import nltk
+from nltk.corpus import stopwords
+
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
+from sklearn.base import BaseEstimator, TransformerMixin
 
 from flask import Flask
 from flask import render_template, request, jsonify
-from plotly.graph_objs import Bar
+from plotly.graph_objs import Bar, Pie
+
+
 import joblib
 
 from sqlalchemy import create_engine
 
-
 app = Flask(__name__)
+
+class StartingVerbExtractor(BaseEstimator, TransformerMixin):
+
+    def starting_verb(self, text):
+        sentence_list = nltk.sent_tokenize(text)
+        for sentence in sentence_list:
+            pos_tags = nltk.pos_tag(tokenize(sentence))
+            first_word, first_tag = pos_tags[0]
+            if first_tag in ['VB', 'VBP'] or first_word == 'RT':
+                return True
+        return False
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        X_tagged = pd.Series(X).apply(self.starting_verb)
+        return pd.DataFrame(X_tagged)
 
 def tokenize(text):
     tokens = word_tokenize(text)
@@ -31,7 +57,7 @@ engine = create_engine('sqlite:///../data/DisasterResponse.db')
 df = pd.read_sql_table('MessageTable', engine)
 
 # load model
-model = joblib.load("../models/classifier.pkl")
+model = joblib.load("../models/classifier_v3.pkl")
 
 
 # index webpage displays cool visuals and receives user input text for model
@@ -43,7 +69,13 @@ def index():
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
-    
+
+    messagesFrequencies = df.iloc[:, 4:].describe().iloc[2,:].sort_values()
+    messagesFrequenciesNames = list(messagesFrequencies.index)
+
+    category_name = list(df.columns[4:])
+    category_counts = [np.sum(df[col]) for col in category_name]
+
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
@@ -63,6 +95,34 @@ def index():
                 'xaxis': {
                     'title': "Genre"
                 }
+            }
+        },
+        {
+            'data': [
+                Pie(
+                    values=messagesFrequencies,
+                    labels=messagesFrequenciesNames,
+                    hoverinfo='label+text+percent',
+                    textposition='inside',
+
+                )
+            ],
+
+            'layout': {
+                'title': 'Frequency of Message',
+                'uniformtext_minsize': '30',
+                'uniformtext_mode': 'hide'
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=category_name,
+                    y=category_counts
+                )
+            ],
+            'layout': {
+                'title': 'Distribution of Message Categories'
             }
         }
     ]
