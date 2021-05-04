@@ -22,9 +22,9 @@ def load_data(messages_filepath, categories_filepath):
 
 def clean_data(df):
     '''
-    Clean data
-    :param df:
-    :return:
+    Clean data, removing NA values, creating a boolean column for each category and append to dataframe. Remove duplicates
+    :param df: dataframe with data to clean
+    :return: dataframe after cleaned
     '''
     df = df.dropna(axis=0, subset=['message'])
 
@@ -59,6 +59,11 @@ def clean_data(df):
     return df
 
 def save_data(df, database_filename):
+    '''
+    save the data to a sqlite database file
+    :param df: dataframe to save in database
+    :param database_filename: the database name to save
+    '''
     engine = create_engine('sqlite:///'+database_filename+'.db')
     df.to_sql('MessageTable', engine, index=False)
 
