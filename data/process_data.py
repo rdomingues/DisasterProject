@@ -47,6 +47,12 @@ def clean_data(df):
         # set each value to be the last character of the string
         # convert column from string to numeric
         categories[column] = categories[column].str[-1].astype(int)
+        categories = categories.dropna(axis=0, subset=[column])
+
+        #categories = categories.drop(categories[categories[column] > 1].index)
+        #categories = categories[categories[column] < 2]
+
+    #categories = categories[(categories < 2).all(axis=1)]
 
     df = df.drop(columns=["categories"])
 
@@ -55,6 +61,9 @@ def clean_data(df):
     # drop duplicates
     df = df.drop_duplicates(subset="id")
     df = df.dropna(axis=0, subset=['message'])
+
+    for column in categories:
+        df = df[df[column] < 2]
 
     return df
 
